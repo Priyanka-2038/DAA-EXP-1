@@ -1,0 +1,181 @@
+import time
+import random
+import string
+
+
+# ---------------- Naive String Matching ----------------
+def naive_match(source, target):
+
+    text_len = len(source)
+    pat_len = len(target)
+
+    found_positions = []
+    compare_count = 0
+
+    for start in range(text_len - pat_len + 1):
+
+        index = 0
+
+        while index < pat_len:
+
+            compare_count += 1
+
+            if source[start + index] != target[index]:
+                break
+
+            index += 1
+
+        if index == pat_len:
+            found_positions.append(start)
+
+    return found_positions, compare_count
+
+
+# ---------------- LPS Construction ----------------
+def build_lps(target):
+
+    pat_len = len(target)
+
+    lps_array = [0] * pat_len
+
+    prefix_len = 0
+    pos = 1
+
+    while pos < pat_len:
+
+        if target[pos] == target[prefix_len]:
+
+            prefix_len += 1
+            lps_array[pos] = prefix_len
+            pos += 1
+
+        elif prefix_len != 0:
+
+            prefix_len = lps_array[prefix_len - 1]
+
+        else:
+
+            lps_array[pos] = 0
+            pos += 1
+
+    return lps_array
+
+
+# ---------------- KMP Algorithm ----------------
+def kmp_match(source, target):
+
+    text_len = len(source)
+    pat_len = len(target)
+
+    lps_array = build_lps(target)
+
+    found_positions = []
+    compare_count = 0
+
+    text_ptr = 0
+    pat_ptr = 0
+
+    while text_ptr < text_len:
+
+        compare_count += 1
+
+        if target[pat_ptr] == source[text_ptr]:
+
+            text_ptr += 1
+            pat_ptr += 1
+
+        if pat_ptr == pat_len:
+
+            found_positions.append(text_ptr - pat_ptr)
+            pat_ptr = lps_array[pat_ptr - 1]
+
+        elif text_ptr < text_len and target[pat_ptr] != source[text_ptr]:
+
+            if pat_ptr != 0:
+                pat_ptr = lps_array[pat_ptr - 1]
+            else:
+                text_ptr += 1
+
+    return found_positions, compare_count
+
+
+# ---------------- Rabin-Karp Algorithm ----------------
+def rk_match(source, target, prime=101):
+
+    text_len = len(source)
+    pat_len = len(target)
+
+    alphabet = 256
+
+    high_pow = pow(alphabet, pat_len - 1, prime)
+
+    pattern_hash = 0
+    window_hash = 0
+
+    found_positions = []
+    compare_count = 0
+
+    # Initial hash calculation
+    for idx in range(pat_len):
+
+        pattern_hash = (alphabet * pattern_hash + ord(target[idx])) % prime
+        window_hash = (alphabet * window_hash + ord(source[idx])) % prime
+
+    # Sliding window
+    for start in range(text_len - pat_len + 1):
+
+        if pattern_hash == window_hash:
+
+            for offset in range(pat_len):
+
+                compare_count += 1
+
+                if source[start + offset] != target[offset]:
+                    break
+
+            else:
+                found_positions.append(start)
+
+        if start < text_len - pat_len:
+
+            window_hash = (
+                alphabet * (window_hash - ord(source[start]) * high_pow)
+                + ord(source[start + pat_len])
+            ) % prime
+
+            if window_hash < 0:
+                window_hash += prime
+
+    return found_positions, compare_count
+
+
+# ---------------- Main Program ----------------
+text = 'AABAACAADAABAABA'
+pattern = 'AABA'
+
+print(f'Text: {text}')
+print(f'Pattern: {pattern}')
+
+naive_result, naive_comp = naive_match(text, pattern)
+kmp_result, kmp_comp = kmp_match(text, pattern)
+rk_result, rk_comp = rk_match(text, pattern)
+
+print(f'\nNaive -> Matches at: {naive_result}, Comparisons: {naive_comp}')
+print(f'KMP -> Matches at: {kmp_result}, Comparisons: {kmp_comp}')
+print(f'RK -> Matches at: {rk_result}, Comparisons: {rk_comp}')
+
+# ---------------- Performance Comparison ----------------
+large_text = ''.join(random.choices('ABCD', k=10000))
+
+pattern_set = ['AB', 'ABCD', 'ABCDAB', 'ABCDABCD']
+
+print(f'\n{"Pattern":>12} {"Naive":>10} {"KMP":>10} {"RK":>10}')
+print('-' * 50)
+
+for current_pattern in pattern_set:
+
+    _, naive_count = naive_match(large_text, current_pattern)
+    _, kmp_count = kmp_match(large_text, current_pattern)
+    _, rk_count = rk_match(large_text, current_pattern)
+
+    print(f'{current_pattern:>12} {naive_count:>10} {kmp_count:>10} {rk_count:>10}')

@@ -1,0 +1,144 @@
+import heapq
+
+# ---------- Disjoint Set (Union-Find) ----------
+
+class DisjointSet:
+
+    def __init__(self, vertices):
+        self.root = [i for i in range(vertices)]
+        self.height = [0] * vertices
+
+    def find_parent(self, node):
+        if self.root[node] != node:
+            self.root[node] = self.find_parent(self.root[node])
+        return self.root[node]
+
+    def merge(self, a, b):
+
+        parent_a = self.find_parent(a)
+        parent_b = self.find_parent(b)
+
+        if parent_a == parent_b:
+            return False
+
+        if self.height[parent_a] < self.height[parent_b]:
+            parent_a, parent_b = parent_b, parent_a
+
+        self.root[parent_b] = parent_a
+
+        if self.height[parent_a] == self.height[parent_b]:
+            self.height[parent_a] += 1
+
+        return True
+
+
+# ---------- Kruskal Algorithm ----------
+
+def kruskal_algorithm(vertices, edge_list):
+
+    edge_list.sort()
+
+    ds = DisjointSet(vertices)
+
+    mst_edges = []
+    total_weight = 0
+
+    for weight, src, dest in edge_list:
+
+        if ds.merge(src, dest):
+
+            mst_edges.append((src, dest, weight))
+            total_weight += weight
+
+            if len(mst_edges) == vertices - 1:
+                break
+
+    return mst_edges, total_weight
+
+
+# ---------- Prim Algorithm ----------
+
+def prim_algorithm(vertices, graph, source=0):
+
+    infinity = float("inf")
+
+    minimum = [infinity] * vertices
+    previous = [-1] * vertices
+    visited = [False] * vertices
+
+    minimum[source] = 0
+
+    priority_queue = [(0, source)]
+
+    mst_edges = []
+    total_weight = 0
+
+    while priority_queue:
+
+        weight, current = heapq.heappop(priority_queue)
+
+        if visited[current]:
+            continue
+
+        visited[current] = True
+
+        if previous[current] != -1:
+            mst_edges.append((previous[current], current, weight))
+            total_weight += weight
+
+        for neighbour, edge_weight in graph.get(current, []):
+
+            if not visited[neighbour] and edge_weight < minimum[neighbour]:
+
+                minimum[neighbour] = edge_weight
+                previous[neighbour] = current
+
+                heapq.heappush(priority_queue, (edge_weight, neighbour))
+
+    return mst_edges, total_weight
+
+
+# ---------- Graph Data ----------
+
+vertices = 7
+
+graph_edges = [
+    (7, 0, 1),
+    (5, 0, 3),
+    (8, 1, 2),
+    (9, 1, 3),
+    (7, 1, 4),
+    (5, 2, 4),
+    (15, 3, 4),
+    (6, 3, 5),
+    (8, 4, 5),
+    (9, 4, 6),
+    (11, 5, 6)
+]
+
+graph = {}
+
+for weight, src, dest in graph_edges:
+
+    graph.setdefault(src, []).append((dest, weight))
+    graph.setdefault(dest, []).append((src, weight))
+
+
+kruskal_result, kruskal_cost = kruskal_algorithm(vertices, graph_edges[:])
+
+prim_result, prim_cost = prim_algorithm(vertices, graph)
+
+
+print("=== Kruskal's MST ===")
+
+for src, dest, weight in kruskal_result:
+    print(f" Edge ({src} - {dest}) Weight: {weight}")
+
+print(f" Total MST Cost: {kruskal_cost}")
+
+print("\n=== Prim's MST ===")
+
+for src, dest, weight in prim_result:
+    print(f" Edge ({src} - {dest}) Weight: {weight}")
+
+print(f" Total MST Cost: {prim_cost}")

@@ -1,0 +1,105 @@
+import time
+import random
+
+
+def interpolation_search(numbers, key):
+    """Interpolation Search"""
+
+    left = 0
+    right = len(numbers) - 1
+    count = 0
+
+    while left <= right and numbers[left] <= key <= numbers[right]:
+
+        count += 1
+
+        if left == right:
+            if numbers[left] == key:
+                return left, count
+            return -1, count
+
+        position = left + (
+            (key - numbers[left]) * (right - left)
+        ) // (numbers[right] - numbers[left])
+
+        if numbers[position] == key:
+            return position, count
+
+        if numbers[position] < key:
+            left = position + 1
+        else:
+            right = position - 1
+
+    return -1, count
+
+
+def binary_search(numbers, key):
+    """Binary Search"""
+
+    start = 0
+    end = len(numbers) - 1
+    count = 0
+
+    while start <= end:
+
+        count += 1
+
+        middle = (start + end) // 2
+
+        if numbers[middle] == key:
+            return middle, count
+
+        if numbers[middle] < key:
+            start = middle + 1
+        else:
+            end = middle - 1
+
+    return -1, count
+
+
+def performance_analysis():
+
+    test_sizes = [1000, 5000, 10000, 50000, 100000]
+
+    print(f"{'Size':>10} {'IS Time(ms)':>14} {'BS Time(ms)':>14} "
+          f"{'IS Comparisons':>16} {'BS Comparisons':>16}")
+
+    print("-" * 75)
+
+    for n in test_sizes:
+
+        data = sorted(random.sample(range(n * 10), n))
+        search_key = data[random.randint(0, n - 1)]
+
+        start_time = time.perf_counter()
+
+        for _ in range(100):
+            is_index, is_comp = interpolation_search(data, search_key)
+
+        is_elapsed = (time.perf_counter() - start_time) / 100 * 1000
+
+        start_time = time.perf_counter()
+
+        for _ in range(100):
+            bs_index, bs_comp = binary_search(data, search_key)
+
+        bs_elapsed = (time.perf_counter() - start_time) / 100 * 1000
+
+        print(f"{n:>10} {is_elapsed:>14.4f} {bs_elapsed:>14.4f} "
+              f"{is_comp:>16} {bs_comp:>16}")
+
+
+# Main Program
+
+sample_array = [2, 5, 10, 15, 23, 35, 48, 60, 75, 90, 105, 120]
+search_element = 35
+
+location, comparisons = interpolation_search(sample_array, search_element)
+
+print("Array:", sample_array)
+print("Searching for:", search_element)
+print(f"Found at index: {location}, Comparisons: {comparisons}")
+
+print()
+
+performance_analysis()
